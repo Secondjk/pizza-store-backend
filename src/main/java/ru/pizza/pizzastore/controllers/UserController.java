@@ -6,20 +6,28 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import ru.pizza.pizzastore.models.Order;
 import ru.pizza.pizzastore.models.User;
+import ru.pizza.pizzastore.payloads.request.OrderRequest;
 import ru.pizza.pizzastore.payloads.request.UserRequest;
+import ru.pizza.pizzastore.payloads.response.OrderResponse;
 import ru.pizza.pizzastore.payloads.response.UserResponse;
+import ru.pizza.pizzastore.repositories.OrderRepository;
 import ru.pizza.pizzastore.repositories.UserRepository;
 import ru.pizza.pizzastore.security.services.UserDetailsImpl;
 
 import javax.validation.Valid;
 import java.util.Optional;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api")
 public class UserController {
     @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    OrderRepository orderRepository;
 
     @GetMapping("/users/{id}")
     public ResponseEntity<?> getTutorialById(@PathVariable("id") long id) {
@@ -87,6 +95,51 @@ public class UserController {
                     userRequest.getTel()), HttpStatus.OK);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @GetMapping("/user/orders")
+    public ResponseEntity<Set<Order>> getOrdersOfCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
+        Optional<User> userData = userRepository.findById(userDetails.getId());
+
+        if (userData.isPresent()) {
+            User user = userData.get();
+
+            return new ResponseEntity<>(user.getOrders(), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+    }
+
+    @PostMapping("/user/addOrder")
+    public ResponseEntity<OrderResponse> addOrder(@Valid @RequestBody OrderRequest orderRequest) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
+        Optional<User> userData = userRepository.findById(userDetails.getId());
+
+        if (userData.isPresent()) {
+            Order newOrder = new Order(orderRequest.getTotalPrice());
+            User user = userData.get();
+
+            Set<Order> orders = user.getOrders();
+            orders.add(newOrder);
+
+            user.setOrders(orders);
+
+            Order order = orderRepository.save(newOrder);
+            userRepository.save(user);
+
+            return new ResponseEntity<>(new OrderResponse(
+                    order.getId(),
+                    order.getDate(),
+                    order.getTotalPrice()
+            ), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
 }

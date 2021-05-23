@@ -62,6 +62,12 @@ public class User {
                 inverseJoinColumns = @JoinColumn(name = "role_id"))
         private Set<Role> roles = new HashSet<>();
 
+        @ManyToMany
+        @JoinTable(name = "user_orders",
+                joinColumns = @JoinColumn(name = "user_id"),
+                inverseJoinColumns = @JoinColumn(name = "order_id"))
+        private Set<Order> orders = new HashSet<>();
+
         public User(String username, String email, String password, String firstName, String lastName) {
                 this.username = username;
                 this.email = email;
@@ -174,5 +180,13 @@ public class User {
 
         public void setIntercom(String intercom) {
                 this.intercom = intercom;
+        }
+
+        public Set<Order> getOrders() {
+                return orders;
+        }
+
+        public void setOrders(Set<Order> orders) {
+                this.orders = orders;
         }
 }

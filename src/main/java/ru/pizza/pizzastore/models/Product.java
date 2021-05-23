@@ -26,6 +26,8 @@ public class Product {
     @Column(name = "initial_price")
     private Double initialPrice;
 
+    @Column(length = 65535)
+    @Type(type = "text")
     private String image;
 
     @Column(length = 65535)
@@ -35,6 +37,14 @@ public class Product {
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "product_type_id")
     private ProductType productType;
+
+    public Product(String name, Double price, String image, String description, ProductType productType) {
+        this.name = name;
+        this.price = price;
+        this.image = image;
+        this.description = description;
+        this.productType = productType;
+    }
 
     public Product() {}
 
